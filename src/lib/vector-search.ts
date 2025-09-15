@@ -22,14 +22,18 @@ export async function findSimilarDocuments(
   limit: number = 5,
 ): Promise<DocumentWithSimilarity[]> {
   try {
+    console.log(`Finding similar documents for query: "${query}" in chatbot ${chatbotId}`);
+    
     // Generate embedding for the query using the fallback mechanism
     const queryEmbedding = await generateEmbedding(query);
+    console.log(`Generated embedding with ${queryEmbedding.length} dimensions`);
     
     // Convert embedding to string format for TiDB
     const embeddingString = JSON.stringify(queryEmbedding);
     
     // Use TiDB's native vector search with HNSW index
     // This query leverages the HNSW index for efficient similarity search
+    console.log(`Executing vector search query for chatbot ${chatbotId}`);
     const results = await db.execute<{
       id: number;
       documentId: number;
@@ -48,6 +52,8 @@ export async function findSimilarDocuments(
       LIMIT ${limit}
     `);
     
+    console.log(`Vector search returned ${results.rows?.length || 0} results`);
+    
     // Check if results exist
     if (!results.rows) {
       return [];
@@ -61,6 +67,7 @@ export async function findSimilarDocuments(
       return [];
     }
     
+    console.log(`Fetching document details for ${documentIds.length} documents`);
     const docs = await db
       .select()
       .from(documents)
@@ -70,6 +77,7 @@ export async function findSimilarDocuments(
           sql`${documents.id} in ${documentIds}`,
         ),
       );
+    console.log(`Found ${docs.length} document details`);
     
     // Combine vector results with document details
     const combinedResults = results.rows.map((result: any) => {
@@ -86,7 +94,7 @@ export async function findSimilarDocuments(
     return combinedResults;
   } catch (error) {
     console.error('Error finding similar documents:', error);
-    throw new Error('Failed to find similar documents');
+    throw new Error('Failed to find similar documents: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 

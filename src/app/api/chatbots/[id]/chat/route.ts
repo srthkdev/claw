@@ -69,18 +69,28 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       // For greetings, provide a short, friendly response
       assistantResponse = `Hello there! I'm your ${chatbot.name} assistant. How can I help you today?`;
     } else {
-      // Find similar documents using vector search
-      similarDocuments = await findSimilarDocuments(message, chatbotId, 3);
+      try {
+        // Find similar documents using vector search
+        similarDocuments = await findSimilarDocuments(message, chatbotId, 3);
+      } catch (vectorSearchError) {
+        console.error('Vector search error:', vectorSearchError);
+        return addCorsHeaders(NextResponse.json({ 
+          error: 'Vector search failed: ' + (vectorSearchError instanceof Error ? vectorSearchError.message : 'Unknown error') 
+        }, { status: 500 }));
+      }
       
       // Create context from similar documents
-      const context = similarDocuments.map(doc => doc.content).join('\n\n');
+      const contextText = similarDocuments.map(doc => doc.content).join('\n\n');
+      
+      // Log for debugging
+      console.log(`Found ${similarDocuments.length} similar documents for chatbot ${chatbotId}`);
       
       // Create prompt with context
       const prompt = `
 You are an AI assistant for ${chatbot.name}. Answer the user's question based on the provided context.
 
 Context:
-${context}
+${contextText}
 
 User Question:
 ${message}
@@ -99,6 +109,8 @@ Your response should be informative, well-structured, and easy to read.
       // Try to get API keys from environment variables first, then fallback to localStorage keys
       const openaiApiKey = process.env.OPENAI_API_KEY;
       const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      
+      console.log('API Keys available - OpenAI:', !!openaiApiKey, 'Google:', !!googleApiKey);
       
       // Try OpenAI first if API key is available
       if (openaiApiKey) {

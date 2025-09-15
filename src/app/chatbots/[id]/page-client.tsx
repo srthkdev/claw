@@ -105,7 +105,16 @@ export default function ChatbotPageClient({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        // Try to get error details from response
+        let errorMessage = 'Failed to send message';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `API Error: ${response.status} ${response.statusText}`;
+        } catch (e) {
+          // If we can't parse JSON, use status text
+          errorMessage = `API Error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -122,11 +131,11 @@ export default function ChatbotPageClient({
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Add error message
+      // Add error message with more details
       const errorMessage: ChatMessage = {
         id: "error-" + Date.now(),
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or contact support if the issue persists.`,
         timestamp: new Date()
       };
       
