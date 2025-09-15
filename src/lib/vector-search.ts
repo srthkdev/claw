@@ -28,8 +28,8 @@ export async function findSimilarDocuments(
     const queryEmbedding = await generateEmbedding(query);
     console.log(`Generated embedding with ${queryEmbedding.length} dimensions`);
     
-    // Convert embedding to string format for TiDB
-    const embeddingString = JSON.stringify(queryEmbedding);
+    // Convert embedding to TiDB VECTOR format
+    const embeddingString = `[${queryEmbedding.join(',')}]`;
     
     // Use TiDB's native vector search with HNSW index
     // This query leverages the HNSW index for efficient similarity search
@@ -44,7 +44,7 @@ export async function findSimilarDocuments(
         v.id,
         v.document_id as documentId,
         v.content,
-        VEC_COSINE_DISTANCE(v.embedding, ${embeddingString}) as similarity
+        VEC_COSINE_DISTANCE(v.embedding, CAST(${embeddingString} AS VECTOR(768))) as similarity
       FROM vectors_new v
       INNER JOIN documents d ON v.document_id = d.id
       WHERE d.chatbot_id = ${chatbotId}
@@ -105,13 +105,13 @@ export async function storeEmbedding(
   embedding: number[],
 ) {
   try {
-    // Convert embedding to string format for TiDB
-    const embeddingString = JSON.stringify(embedding);
+    // Convert embedding to TiDB VECTOR format
+    const embeddingString = `[${embedding.join(',')}]`;
     
     // Insert the embedding using raw SQL to work with VECTOR type
     await db.execute(sql`
       INSERT INTO vectors_new (document_id, content, embedding, metadata, created_at)
-      VALUES (${documentId}, ${content}, ${embeddingString}, '{}', UTC_TIMESTAMP())
+      VALUES (${documentId}, ${content}, CAST(${embeddingString} AS VECTOR(768)), '{}', UTC_TIMESTAMP())
     `);
     
     // Select the newly created embedding by querying for the last inserted record

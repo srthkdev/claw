@@ -91,7 +91,7 @@ flowchart TB
     end
     
     subgraph "TiDB Storage Layer"
-        I --> J[JSON Vector Storage<br/>Workaround for Drizzle ORM limitations]
+        I --> J[Vector Storage<br/>Native TiDB VECTOR type]
         J --> K[Vector Table Insertion<br/>vectors_new Table]
         K --> L[Document Table Update<br/>documents Table]
     end
@@ -147,7 +147,7 @@ erDiagram
         int id PK
         int document_id FK
         longtext content
-        json embedding
+        vector(768) embedding  // Native VECTOR type
         json metadata
         timestamp created_at
     }
@@ -217,16 +217,16 @@ flowchart TB
         E --> F[Vector Validation]
     end
     
-    subgraph "Storage Workaround"
-        F --> G[JSON Serialization]
+    subgraph "Vector Storage"
+        F --> G[CAST to VECTOR(768)]
         G --> H[Vector Table Insertion]
         H --> I[Document Metadata Update]
     end
     
     subgraph "Search Implementation"
         I --> J[Query Embedding]
-        J --> K[Raw SQL Execution]
-        K --> L[Full Scan Search]
+        J --> K[CAST to VECTOR(768)]
+        K --> L[VEC_COSINE_DISTANCE Search]
         L --> M[Result Filtering]
         M --> N[Result Ranking]
         N --> O[Top-K Selection]
@@ -240,13 +240,13 @@ flowchart TB
 
 ## TiDB Vector Search Implementation
 
-### Current Vector Storage (Workaround)
+### Current Vector Storage
 ```sql
 CREATE TABLE vectors_new (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   document_id BIGINT,
   content TEXT,
-  embedding JSON,  -- JSON storage due to Drizzle ORM limitations
+  embedding VECTOR<FLOAT>(768),  -- Native VECTOR type
   metadata JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -258,7 +258,7 @@ SELECT
   v.id,
   v.document_id as documentId,
   v.content,
-  VEC_COSINE_DISTANCE(v.embedding, '[1, 2, 3, ...]') as similarity
+  VEC_COSINE_DISTANCE(v.embedding, CAST('[1, 2, 3, ...]' AS VECTOR(768))) as similarity
 FROM vectors_new v
 INNER JOIN documents d ON v.document_id = d.id
 WHERE d.chatbot_id = 1
@@ -268,10 +268,10 @@ LIMIT 3;
 
 ### Current Implementation Details
 - **Vector Dimensions**: 768 (OpenAI text-embedding-3-small with dimensions parameter)
-- **Storage Format**: JSON (due to Drizzle ORM limitations with native VECTOR type)
-- **Search Method**: Full table scan with VEC_COSINE_DISTANCE calculation
-- **Indexing**: No native HNSW index yet due to ORM limitations
-- **Future Plans**: Migrate to native VECTOR type when Drizzle ORM supports it
+- **Storage Format**: Native VECTOR<FLOAT>(768) type
+- **Search Method**: VEC_COSINE_DISTANCE with CAST for proper type conversion
+- **Indexing**: No native HNSW index yet
+- **Future Plans**: Implement HNSW indexing for improved search performance
 
 ## Architecture
 
@@ -282,15 +282,15 @@ The application uses TiDB with the following tables:
 1. **users**: User accounts from Clerk
 2. **chatbots**: User-created chatbots with configuration
 3. **documents**: Ingested content from websites or repositories
-4. **vectors_new**: Vector embeddings of document chunks (using JSON storage)
+4. **vectors_new**: Vector embeddings of document chunks (using native VECTOR type)
 5. **chat_history**: Conversation history for each chatbot
 
 ### Vector Search Implementation
 
 - Uses TiDB's native `VEC_COSINE_DISTANCE` function for similarity calculations
 - Implements fallback mechanisms for both embedding generation and LLM responses
-- Uses raw SQL queries to access TiDB's vector functions due to ORM limitations
-- Plans to implement native HNSW indexes when ORM support is available
+- Properly uses CAST to convert arrays to VECTOR type for storage and search
+- Plans to implement native HNSW indexes for improved performance
 
 ### Multi-Cluster Placement
 
@@ -375,9 +375,8 @@ This project fulfills all hackathon requirements:
 
 ## Future Enhancements
 
-- Implement native VECTOR type when Drizzle ORM supports it
-- Add HNSW indexing for improved search performance
-- Implement GitHub repository integration
+- Implement HNSW indexing for improved search performance
+- Add GitHub repository integration
 - Add support for PDF and other document types
 - Improve chunking algorithms for better context
 - Add analytics dashboard

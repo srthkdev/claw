@@ -25,14 +25,29 @@ async function checkVectorDimensions() {
       },
     });
     
-    // Get a sample of vectors and check their dimensions
-    const [rows] = await connection.execute(
-      'SELECT id, document_id, JSON_LENGTH(embedding) as dimensions FROM vectors_new LIMIT 5'
+    // Try a different approach to check vector dimensions
+    // First, let's see what the column type is
+    const [schemaRows] = await connection.execute(
+      'DESCRIBE vectors_new'
     );
     
-    console.log('Vector dimensions in database:');
-    for (const row of rows) {
-      console.log(`  Vector ID ${row.id} (Document ${row.document_id}): ${row.dimensions} dimensions`);
+    console.log('Table schema:');
+    for (const row of schemaRows) {
+      console.log(`  ${row.Field}: ${row.Type}`);
+    }
+    
+    // Try to get vector info using TiDB specific functions
+    try {
+      const [vectorRows] = await connection.execute(
+        'SELECT id, document_id, length(embedding) as dimensions FROM vectors_new LIMIT 5'
+      );
+      
+      console.log('\nVector dimensions in database:');
+      for (const row of vectorRows) {
+        console.log(`  Vector ID ${row.id} (Document ${row.document_id}): ${row.dimensions} dimensions`);
+      }
+    } catch (queryError) {
+      console.log('\nCould not query vector dimensions directly:', queryError.message);
     }
     
     // Also check the total count

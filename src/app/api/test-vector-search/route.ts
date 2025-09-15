@@ -1,36 +1,32 @@
-import { findSimilarDocuments } from '@/lib/vector-search';
 import { NextResponse } from 'next/server';
+import { findSimilarDocuments } from '@/lib/vector-search';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('Testing vector search with a sample query...');
+    // Test with a sample query and chatbot ID
+    const testQuery = "What is artificial intelligence?";
+    const chatbotId = 30001; // Use an existing chatbot ID
     
-    // Test with a simple query
-    const query = "What is this chatbot about?";
-    const chatbotId = 30001; // The chatbot ID from the error
+    console.log(`Testing vector search with query: "${testQuery}" for chatbot ${chatbotId}`);
     
-    console.log(`Searching for similar documents to: "${query}" in chatbot ${chatbotId}`);
-    
-    const results = await findSimilarDocuments(query, chatbotId, 3);
-    
-    console.log(`Found ${results.length} similar documents`);
+    const results = await findSimilarDocuments(testQuery, chatbotId, 3);
     
     return NextResponse.json({
       success: true,
-      query,
+      query: testQuery,
       results: results.map(result => ({
         id: result.id,
         documentId: result.documentId,
-        contentPreview: result.content?.substring(0, 100) + '...',
-        similarity: result.similarity,
-        hasDocument: !!result.document
-      }))
+        content: result.content.substring(0, 100) + '...', // Truncate for readability
+        similarity: result.similarity
+      })),
+      message: `Found ${results.length} similar documents`
     });
-  } catch (error) {
-    console.error('Vector search test failed:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error'
+  } catch (error: any) {
+    console.error('Error in test vector search:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Unknown error occurred'
     }, { status: 500 });
   }
 }
