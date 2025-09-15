@@ -2,20 +2,13 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
   Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+  Home,
+  Settings,
+  BarChart3,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -25,149 +18,106 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useUser } from '@clerk/clerk-react'
+import { useEffect, useState } from "react"
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, isLoaded } = useUser()
+  const [chatbots, setChatbots] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch chatbots from the database
+  useEffect(() => {
+    const fetchChatbots = async () => {
+      if (!isLoaded || !user) return
+      
+      try {
+        const response = await fetch('/api/chatbots')
+        if (response.ok) {
+          const chatbotsData = await response.json()
+          setChatbots(chatbotsData)
+        }
+      } catch (error) {
+        console.error('Failed to fetch chatbots:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchChatbots()
+  }, [isLoaded, user])
+
+  // Define navigation structure
+  const navMain = [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
       isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Models",
-      url: "#",
+      title: "Chatbots",
+      url: "/dashboard",
       icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
+      items: chatbots.map(chatbot => ({
+        title: chatbot.name,
+        url: `/dashboard/chatbots/${chatbot.id}`,
+      }))
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+      title: "Analytics",
+      url: "/dashboard/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "MCP Integration",
+      url: "/dashboard/mcp",
+      icon: Bot,
     },
     {
       title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
+      url: "/dashboard/settings",
+      icon: Settings,
     },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  if (!isLoaded) {
+    return (
+      <Sidebar collapsible="icon" {...props}>
+        <SidebarHeader>
+          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="space-y-2 p-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-8 bg-gray-200 rounded animate-pulse" />
+            ))}
+          </div>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="h-12 bg-gray-200 rounded animate-pulse" />
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+    )
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={[
+          {
+            name: "Claw Chatbots",
+            logo: Bot,
+            plan: "Free",
+          },
+        ]} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

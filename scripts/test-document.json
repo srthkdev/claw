@@ -1,0 +1,9 @@
+{
+  "url": "https://example.com/test",
+  "content": "This is a test document for verifying the ingestion process. It contains sample content that will be embedded and stored in the vector database.",
+  "contentType": "text",
+  "metadata": {
+    "source": "test",
+    "description": "Test document for verification"
+  }
+}

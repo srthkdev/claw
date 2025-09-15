@@ -1,0 +1,21 @@
+{
+  "name": "@claw/mcp-client",
+  "version": "1.0.0",
+  "description": "MCP Client SDK for Claw Chatbot Maker",
+  "main": "client.ts",
+  "types": "client.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "chatbot",
+    "claw",
+    "ai"
+  ],
+  "author": "Claw Chatbot Maker",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.0.0"
+  }
+}
