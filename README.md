@@ -24,7 +24,7 @@ This project is an AI-powered chatbot builder that allows users to create custom
 
 ### Advanced RAG (Retrieval-Augmented Generation) System
 
-```mermaid
+```
 graph TB
     subgraph "User Interaction"
         A[User Query] --> B[Chat Interface]
@@ -33,7 +33,7 @@ graph TB
     subgraph "Query Processing"
         B --> C[Query Preprocessing]
         C --> D[Embedding Generation<br/>OpenAI text-embedding-3-small<br/>OR Google text-embedding-004]
-        D --> E[Query Vector<br/>1536 dimensions]
+        D --> E[Query Vector<br/>768 dimensions]
     end
     
     subgraph "TiDB Vector Search Engine"
@@ -66,7 +66,7 @@ graph TB
 
 ### Comprehensive Data Pipeline
 
-```mermaid
+```
 flowchart TB
     subgraph "Data Sources"
         A1[Documentation Websites] --> B[Ingestion Service]
@@ -87,7 +87,7 @@ flowchart TB
     
     subgraph "Embedding Generation"
         G --> H[Embedding Generation<br/>OpenAI text-embedding-3-small (primary)<br/>Google text-embedding-004 (fallback)]
-        H --> I[Vector Representation<br/>1536 dimensions]
+        H --> I[Vector Representation<br/>768 dimensions]
     end
     
     subgraph "TiDB Storage Layer"
@@ -105,7 +105,7 @@ flowchart TB
 
 ### Detailed Database Schema with TiDB Features
 
-```mermaid
+```
 erDiagram
     USERS ||--o{ CHATBOTS : owns
     CHATBOTS ||--o{ DOCUMENTS : contains
@@ -165,7 +165,7 @@ erDiagram
 
 ### Intelligent AI Agent Workflow
 
-```mermaid
+```
 flowchart TB
     subgraph "Input Processing"
         A[User Message] --> B[Message Validation]
@@ -204,7 +204,7 @@ flowchart TB
 
 ### Current Vector Implementation Process
 
-```mermaid
+```
 flowchart TB
     subgraph "Document Ingestion"
         A[Document Content] --> B[Text Preprocessing]
@@ -267,7 +267,7 @@ LIMIT 3;
 ```
 
 ### Current Implementation Details
-- **Vector Dimensions**: 1536 (OpenAI text-embedding-3-small)
+- **Vector Dimensions**: 768 (OpenAI text-embedding-3-small with dimensions parameter)
 - **Storage Format**: JSON (due to Drizzle ORM limitations with native VECTOR type)
 - **Search Method**: Full table scan with VEC_COSINE_DISTANCE calculation
 - **Indexing**: No native HNSW index yet due to ORM limitations

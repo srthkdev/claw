@@ -59,6 +59,7 @@ async function generateEmbeddingWithOpenAI(text: string): Promise<number[]> {
       body: JSON.stringify({
         model: 'text-embedding-3-small',
         input: text,
+        dimensions: 768  // Match the database schema
       })
     });
     
@@ -104,6 +105,7 @@ async function generateEmbeddingsWithOpenAI(texts: string[]): Promise<number[][]
       body: JSON.stringify({
         model: 'text-embedding-3-small',
         input: texts,
+        dimensions: 768  // Match the database schema
       })
     });
     
